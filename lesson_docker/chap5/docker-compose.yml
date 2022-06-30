@@ -1,0 +1,48 @@
+version: "3"
+
+networks:
+  wp-network:
+
+volumes:
+  wp-resources:
+  wp-database:
+
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: mynginx.Dockerfile
+    volumes:
+      - type: volume
+        source: wp-resources
+        target: /usr/share/nginx/html
+    ports:
+      - "8080:80"
+    depends_on:
+      - wordpress
+    networks:
+      - wp-network
+
+  wordpress:
+    image: wordpress:php8.1-fpm
+    volumes:
+      - type: volume
+        source: wp-resources
+        target: /var/www/html
+    networks:
+      - wp-network
+
+  database:
+    image: mariadb:10.7
+    restart: always
+    volumes:
+      - type: volume
+        source: wp-database
+        target: /var/lib/mysql
+    environment:
+      MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: yes
+      MARIADB_DATABASE: wordpress_db
+      MARIADB_USER: admin
+      MARIADB_PASSWORD: admin
+    networks:
+      - wp-network

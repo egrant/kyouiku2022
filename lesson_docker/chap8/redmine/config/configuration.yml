@@ -1,0 +1,11 @@
+default:
+  email_delivery:
+    delivery_method: :smtp
+    smtp_settings:
+      enable_starttls_auto: true
+      address: smtp.gmail.com
+      port: 587
+      domain: smtp.gmail.com
+      authentication: :login
+      user_name: example@gmail.com
+      password: p@ssw0rd

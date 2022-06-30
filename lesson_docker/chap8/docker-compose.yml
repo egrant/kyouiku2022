@@ -1,0 +1,38 @@
+version: '3'
+
+volumes:
+  rm-database:
+
+services:
+  web:
+    image: redmine:5.0.2
+    restart: unless-stopped
+    command: 'sh -c "cp /usr/src/config/configuration.yml /usr/src/redmine/config/configuration.yml && /docker-entrypoint.sh rails server -b 0.0.0.0"'
+    ports:
+      - 3000:3000
+    volumes:
+      - type: bind
+        source: './redmine/config'
+        target: '/usr/src/config'
+      - type: bind
+        source: './redmine/files'
+        target: '/usr/src/redmine/files'
+      - type: bind
+        source: './redmine/plugins'
+        target: '/usr/src/redmine/plugins'
+    environment:
+      REDMINE_SECRET_KEY_BASE:
+      REDMINE_DB_POSTGRES: database
+      REDMINE_DB_DATABASE: redmine_db
+      REDMINE_DB_USERNAME: admin
+      REDMINE_DB_PASSWORD: admin
+  database:
+    image: postgres:14.4
+    environment:
+      POSTGRES_DB: redmine_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    volumes:
+      - type: volume
+        source: rm-database
+        target: '/var/lib/postgresql/data'

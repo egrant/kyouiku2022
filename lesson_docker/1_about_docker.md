@@ -8,7 +8,7 @@ Linux OS 上で 複数の独立した Linux システム (コンテナ) を実�
 
 例えば以下の図のように Amazon Linux 2 上で Ubuntu や Debian ベースのコンテナを動かすことができます。
 
-<img src="./1_1_containers.png" width="600px" />
+<img src="./img/1_1_containers.png" width="600px" />
 
 コンテナは OS を動かすというよりは上の図のように何らかのアプリケーションやコマンドプロセスの実行を行うのが普通です。  
 ただ、コンテナはアプリケーションだけでなくその実行環境を含めて構成されます。
