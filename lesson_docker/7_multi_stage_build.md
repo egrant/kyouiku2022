@@ -1,7 +1,8 @@
 ## 7. (発展) multi-stage build
 
 ### Go で Web アプリを作ってコンテナで実行する
-Go で Web サーバーを作成するパートは Docker とは関係がありませんが、がんばてみて下さい。
+multi-stage build を学ぶため、具体例として Go で Web アプリを作ってコンテナで動かしてみようと思います。
+Web アプリを作成するパートは Docker とは関係がありませんが、がんばてみて下さい。
 
 #### goenv, go インストール
 
@@ -57,21 +58,32 @@ $ go mod init goapp
 ```go
 package main
 
-import "net/http"
+import (
+	"log"
+	"net/http"
+)
+
+func MyHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	switch r.Method {
+	case http.MethodGet:
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"message": "hello"}`))
+	default:
+		http.Error(w, ``, http.StatusMethodNotAllowed)
+	}
+}
 
 func main() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+	port := "8888"
 
-		switch r.Method {
-		case http.MethodGet:
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"message": "hello"}`))
-		default:
-			http.Error(w, ``, http.StatusMethodNotAllowed)
-		}
-	})
-	http.ListenAndServe(":8888", nil)
+	http.HandleFunc("/", MyHandler)
+
+	done := make(chan bool)
+	go http.ListenAndServe(":"+port, nil)
+	log.Printf("Server started at port %v", port)
+	<-done
 }
 ```
 
@@ -98,7 +110,7 @@ EXPOSE 8888
 USER nonroot:nonroot
 ENTRYPOINT ["/server"]
 ```
-そもそも説明していない命令コマンドがいくつかできてきました。それらについては後に回すとして、全体の説明をするとこの Dockerfile は 2 つのパートに分かれています。`FROM` が二箇所出現しているところがそれで、image が 2 つ作成されます。一つ目の image で go のプログラムをコンパイルし、できあがった実行ファイルを二つ目の image にコピー (`COPY --from=build` の箇所) します。コンテナとして使用するのは 2 つ目の image です。
+説明していない命令コマンドがいくつかできてきました。それらについては後に回すとして、全体の説明をするとこの Dockerfile は 2 つのパートに分かれています。`FROM` が二箇所出現しているところがそれで、image が 2 つ作成されます。一つ目の image で go のプログラムをコンパイルし、できあがった実行ファイルを二つ目の image にコピー (`COPY --from=build` の箇所) します。コンテナとして使用するのは 2 つ目の image です。
 
 このように、多段階に分けて image をビルドすること、あるいはその機能のことを multi-stage build といいます。  
 このようなことをして何が嬉しいのかというと、image サイズを小さくできるという点があります。コンパイルを行うためにはそのための開発ツールが必要ですが、コンテナ実行時にそれらは必要ありません。そのためコンパイルする image と実行する image を分けると都合がいいのです。また実行コンテナに不要なものがあると、それがセキュリティホールになる可能性があるため、できる限り不要なものは削ぐべきです。
@@ -126,5 +138,6 @@ $ docker run -it --rm -p 8888:8888 goapp
 
 ### 参考文献
 - 渋川よしき・辻大志郎・真野隼記著 (2022)『実用 GO言語』 オライリー・ジャパン
+- https://stackoverflow.com/questions/34312615/log-when-server-is-started
 - https://zenn.dev/suiudou/articles/5e1dfd1008bf29
 - https://qiita.com/tanan/items/e79a5dc1b54ca830ac21#user

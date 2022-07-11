@@ -1,18 +1,29 @@
 package main
 
-import "net/http"
+import (
+	"log"
+	"net/http"
+)
+
+func MyHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	switch r.Method {
+	case http.MethodGet:
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"message": "hello"}`))
+	default:
+		http.Error(w, ``, http.StatusMethodNotAllowed)
+	}
+}
 
 func main() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+	port := "8888"
 
-		switch r.Method {
-		case http.MethodGet:
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"message": "hello"}`))
-		default:
-			http.Error(w, ``, http.StatusMethodNotAllowed)
-		}
-	})
-	http.ListenAndServe(":8888", nil)
+	http.HandleFunc("/", MyHandler)
+
+	done := make(chan bool)
+	go http.ListenAndServe(":"+port, nil)
+	log.Printf("Server started at port %v", port)
+	<-done
 }
